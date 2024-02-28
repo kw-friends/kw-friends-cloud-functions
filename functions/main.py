@@ -6,26 +6,55 @@ from firebase_admin import initialize_app, db, messaging
 
 app = initialize_app()
 
-#registration_token = 'token'
-
+# 채팅방에 새로운 채팅 추가됐을 때
 @db_fn.on_value_created(
     reference = r"/chattings/messages/{roomID}/{messageID}",
     region = "asia-southeast1"
 )
 def onMessageCreated(event: db_fn.Event[db_fn.Change]):
 
-    message = messaging.Message(
+    #채팅방ID, 메시지ID, 작성자UID
+    roomID = event.params['roomID']
+    messageID = event.params['messageID']
+    writer_uid = event.data['uid']
+    print(f"채팅 정보: {roomID}, {messageID}")
+
+    # 채팅방 이름 가져오기
+    group_title_ref = db.reference(f'/chattings/rooms/{roomID}/title')
+    group_title = group_title_ref.get()
+
+    # 채팅 작성자 이름 가져오기
+    writer_info_ref = db.reference(f'/users/{writer_uid}/name')
+    writer_name = writer_info_ref.get()
+
+    # 채팅방 참가자 목록 가져오기
+    participants_ref = db.reference(f'/chattings/rooms/{roomID}/members')
+    participants = participants_ref.get().keys()
+    print(f"채팅방 참가자 목록: {participants}")
+
+    # 채팅방 참가자 목록 가져오기
+    tokens = []
+    for uid in participants: 
+        user_info_ref = db.reference(f'/users/{uid}/fcm-token')
+        user_token = user_info_ref.get()
+        if user_token == None:
+            continue
+        tokens.append(user_token)
+    print(f"채팅방 참가자 토큰 목록: {tokens}")
+
+    # 메시지 양식
+    message = messaging.MulticastMessage(
         notification=messaging.Notification(
-            title = event.data['uid'],
-            body = event.data['content'],
+            title = f"{group_title}",
+            body = f"{writer_name}:\n{event.data['content']}",
         ),
-        token=registration_token,
+        tokens=tokens,
     )
 
-    # Send a message to the device corresponding to the provided
-    # registration token.
-    response = messaging.send(message)
-    # Response is a message ID string.
+    # Send message
+    response = messaging.send_multicast(message)
+    # Response
+    print(f'{response.success_count} messages were sent successfully')
     print('Successfully sent message:', response)
 
     
