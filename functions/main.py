@@ -1,11 +1,8 @@
 # The Cloud Functions for Firebase SDK to create Cloud Functions and set up triggers.
 from firebase_functions import db_fn
 
-# The Firebase Admin SDK to access the Firebase Realtime Database.
-from firebase_admin import initialize_app, db
-
-# The Firebase Admin SDK to access Cloud Firestore.
-from firebase_admin import firestore, messaging
+# The Firebase Admin SDK to access the Firebase Realtime Database and Cloud Messaging.
+from firebase_admin import initialize_app, db, messaging
 
 app = initialize_app()
 
