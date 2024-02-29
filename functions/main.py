@@ -13,7 +13,7 @@ app = initialize_app()
 )
 def onMessageCreated(event: db_fn.Event[db_fn.Change]):
 
-    #채팅방ID, 메시지ID, 작성자UID
+    # 채팅방ID, 메시지ID, 작성자UID
     roomID = event.params['roomID']
     messageID = event.params['messageID']
     writer_uid = event.data['uid']
@@ -32,7 +32,7 @@ def onMessageCreated(event: db_fn.Event[db_fn.Change]):
     participants = participants_ref.get().keys()
     print(f"채팅방 참가자 목록: {participants}")
 
-    # 채팅방 참가자 목록 가져오기
+    # 채팅방 참가자 토큰 목록 가져오기
     tokens = []
     for uid in participants: 
         user_info_ref = db.reference(f'/users/{uid}/fcm-token')
@@ -55,6 +55,5 @@ def onMessageCreated(event: db_fn.Event[db_fn.Change]):
     response = messaging.send_multicast(message)
     # Response
     print(f'{response.success_count} messages were sent successfully')
-    print('Successfully sent message:', response)
 
     
