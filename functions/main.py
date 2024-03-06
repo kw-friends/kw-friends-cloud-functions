@@ -17,7 +17,7 @@ def onMessageCreated(event: db_fn.Event[db_fn.Change]):
     roomID = event.params['roomID']
     messageID = event.params['messageID']
     writer_uid = event.data['uid']
-    print(f"채팅 정보: {roomID}, {messageID}")
+    print(f"roomID: {roomID}, writer_uid: {writer_uid}, messageID {messageID}")
 
     # 채팅방 이름 가져오기
     group_title_ref = db.reference(f'/chattings/rooms/{roomID}/title')
@@ -32,15 +32,17 @@ def onMessageCreated(event: db_fn.Event[db_fn.Change]):
     participants = participants_ref.get().keys()
     print(f"채팅방 참가자 목록: {participants}")
 
-    # 채팅방 참가자 토큰 목록 가져오기
+    # 채팅방 참가자 fcm토큰 목록 가져오기
     tokens = []
-    for uid in participants: 
+    for uid in participants:
+        if uid == writer_uid: # 메시지 작성자는 알림 대상에서 제외
+            continue
         user_info_ref = db.reference(f'/users/{uid}/fcm-token')
         user_token = user_info_ref.get()
-        if user_token == None:
+        if user_token == None: # fcm토큰 없는 사용자는 알림 대상에서 제외
             continue
         tokens.append(user_token)
-    print(f"채팅방 참가자 토큰 목록: {tokens}")
+    print(f"채팅방 참가자 fcm토큰 목록: {tokens}")
 
     # 메시지 양식
     message = messaging.MulticastMessage(
@@ -55,6 +57,12 @@ def onMessageCreated(event: db_fn.Event[db_fn.Change]):
     response = messaging.send_multicast(message)
     # Response
     print(f'{response.success_count} messages were sent successfully')
+
+    for idx, response in enumerate(response.responses):
+        if response.success:
+            print(f"메시지가 성공적으로 전송됨: 토큰 {tokens[idx]}")
+        else:
+            print(f"메시지 전송 실패: 토큰 {tokens[idx]}, 오류: {response.exception}")
 
     
 # 모임 참가상태 바뀌었을 때
