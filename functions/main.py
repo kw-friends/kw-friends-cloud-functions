@@ -57,3 +57,17 @@ def onMessageCreated(event: db_fn.Event[db_fn.Change]):
     print(f'{response.success_count} messages were sent successfully')
 
     
+# 모임 참가상태 바뀌었을 때
+@db_fn.on_value_written(
+    reference = r"/posts/{postID}/participants/{userID}",
+    region = "asia-southeast1"
+)
+def onParticipantsChange(event: db_fn.Event[db_fn.Change]):
+
+    # 채팅방ID, 메시지ID, 작성자UID
+    postID = event.params['postID']
+    userID = event.params['userID']
+    print(f"참가 변경됨: {postID}, {userID}")
+
+    print(f"이전 데이터: {event.data.before}")
+    print(f"이후 데이터: {event.data.after}")
